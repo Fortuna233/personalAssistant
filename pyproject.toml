@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "campus-study-assistant"
-version = "0.1.0"
+version = "0.1.0a1"
 requires-python = ">=3.9"
 dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "pypdf>=5,<7", "markdown-it-py>=3,<5"]
 

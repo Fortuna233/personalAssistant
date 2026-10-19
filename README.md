@@ -56,3 +56,7 @@ docs/              架构、限制、部署、验收和后续路线
 校园网内 HTTP 登录与文件传输不提供 HTTPS 保密性；真实私人资料部署应通过本地反向代理配置可信 HTTPS，或先仅使用 localhost 试验网页。Syncthing 自身文件传输有设备认证与加密。数据库内含笔记文本和批注，运行目录应限制在自己的账户权限内。
 
 Syncthing 是同步，不是完整备份；主机本地修改不会由其本机版本管理自动保留。请定期运行 `scripts/backup.py` 到同步树之外的备份磁盘，并做恢复测试。
+
+## Git 与贡献
+
+使用短期分支、检查后合并 main。开发约定、提交 hooks 与远程保护建议见 [CONTRIBUTING.md](CONTRIBUTING.md)，版本变化见 [CHANGELOG.md](CHANGELOG.md)。当前仅本地仓库，尚未连接远程；GitHub CI 和 Dependabot 配置将在接入 GitHub 后运行。

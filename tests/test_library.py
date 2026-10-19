@@ -32,7 +32,10 @@ def test_index_updates_and_removes_deleted_files(library):
 def test_private_hidden_paths_and_symlinks_are_excluded(library, tmp_path):
     secret = tmp_path / "secret.md"
     secret.write_text("private")
-    (library.root / "escape.md").symlink_to(secret)
+    try:
+        (library.root / "escape.md").symlink_to(secret)
+    except OSError:
+        pytest.skip("This Windows account does not have symbolic-link privileges")
     hidden = library.root / ".obsidian"
     hidden.mkdir()
     (hidden / "secret.md").write_text("private")

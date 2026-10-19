@@ -32,3 +32,10 @@ node --check src/assistant/static/app.js
 - 正式资料的可信 HTTPS 配置。
 
 未验证事项不视为验收通过；逐项记录在 TONIGHT.md。
+
+## Git 管理补充验证
+
+- 新增私人配置与疑似凭据检查回归，总计 13 项 pytest 通过。
+- 本地 pre-commit 启用：敏感文件检查、Ruff、格式、测试；main 禁止直接提交。
+- CI 配置已创建，但未连接远程，不能声称 GitHub CI 已执行。
+- Actions 使用已核实的官方完整提交 SHA：checkout v7.0.1、setup-python v7.0.0。
