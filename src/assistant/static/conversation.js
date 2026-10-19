@@ -20,6 +20,7 @@
   }
   async function openPanel(workspace,documentId){
     if(!names[workspace])return;
+    $('conversation-view').hidden=workspace==='files';$('workspace').classList.toggle('files-fullscreen',workspace==='files');
     panel=workspace;$('task-panel').hidden=false;$('workspace').classList.add('workbench-open');$('task-panel-title').textContent=names[workspace];
     $('file-workspace').hidden=workspace!=='files';$('literature-view').hidden=workspace!=='literature';$('tasks-view').hidden=workspace!=='tasks';
     if(workspace==='literature')await window.openLiteratureWorkspace(documentId);
@@ -32,7 +33,7 @@
     jobs.forEach(job=>{const row=element('article','','conversation-task');row.append(element('strong',job.topic+' · '+job.status));row.append(element('p',job.error||job.progress));row.append(element('code',job.id));const button=element('button','打开文献阅读','quiet');button.onclick=()=>openPanel('literature',job.document_id).catch(error=>status(error.message));row.append(button);box.append(row);});
   }
   function updateContext(){const context=panel==='literature'&&window.activeReadingContext?.();$('conversation-input').placeholder=context?'针对当前论文小节提问…':'说说你想做什么…';}
-  $('task-panel-close').onclick=()=>{panel=null;if(names[location.hash.slice(1)])history.replaceState(null,'',location.pathname+location.search);$('task-panel').hidden=true;$('workspace').classList.remove('workbench-open');updateContext();};
+  $('task-panel-close').onclick=()=>{panel=null;if(names[location.hash.slice(1)])history.replaceState(null,'',location.pathname+location.search);$('task-panel').hidden=true;$('workspace').classList.remove('workbench-open','files-fullscreen');$('conversation-view').hidden=false;updateContext();};
   $('literature-tab').onclick=()=>{$('conversation-view').hidden=false;$('task-panel-close').click();};
   $('files-tab').onclick=()=>openPanel('files').catch(error=>status(error.message));
   $('conversation-settings').onclick=()=>$('lit-settings-open').click();
