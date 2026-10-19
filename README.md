@@ -64,3 +64,7 @@ Syncthing 是同步，不是完整备份；主机本地修改不会由其本机�
 使用短期分支、检查后合并 main。开发约定、提交 hooks 与远程保护建议见 [CONTRIBUTING.md](CONTRIBUTING.md)，版本变化见 [CHANGELOG.md](CHANGELOG.md)。当前仅本地仓库，尚未连接远程；GitHub CI 和 Dependabot 配置将在接入 GitHub 后运行。
 
 文件创建日期使用主机文件系统提供的时间；不支持时标记 `*` 并使用首次发现时间，不能视为源设备的创建日期。文件操作限制在资料库、拒绝隐藏路径和符号链接；Syncthing 同步根目录不能从网页重命名或删除。回收区记录保存在数据库，文件保存在 `.study-trash`，备份和恢复时应保留两者。
+
+## 能力成长的目标架构
+
+成功流程和用户纠正将通过“候选 → 验证 → 启用 → 自动匹配 → 固定版本执行 → 反馈”复用。能力包由 Git 管理，运行状态由服务器持久化；能力启用不等于外部操作审批。[完整设计](docs/CAPABILITIES.md)及 [ADR](docs/adr/0001-capability-lifecycle.md)已纳入架构，运行机制尚未实现。
