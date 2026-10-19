@@ -1,5 +1,6 @@
 param(
-    [string]$Library = "D:\StudyLibrary",
+    [string]$Library = "D:\StudyLibrary\Media",
+    [string]$Records = "D:\PersonalRecords",
     [string]$BindAddress = "127.0.0.1"
 )
 $ErrorActionPreference = "Stop"
@@ -11,7 +12,7 @@ if ($LASTEXITCODE -ne 0) { throw "创建虚拟环境失败" }
 & .\.venv\Scripts\python.exe -m pip install --upgrade pip
 & .\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt -e ".[dev]"
 if ($LASTEXITCODE -ne 0) { throw "安装依赖失败" }
-foreach ($Folder in @("Notes", "Books", "Experiments")) {
+foreach ($Folder in @("Books", "Papers", "Experiments")) {
     New-Item -ItemType Directory -Force -Path (Join-Path $Library $Folder) | Out-Null
 }
 New-Item -ItemType Directory -Force -Path "runtime" | Out-Null
@@ -27,8 +28,10 @@ if (-not (Test-Path "config/local.json")) {
         port = 8765
         token = [Convert]::ToBase64String($Bytes)
         scan_seconds = 60
+        zotero = @{ enabled = $false; kind = "users"; library_id = "0"; allowed_roots = @(); storage_root = ""; interval_seconds = 60 }
+        sync = @{ media_folder_id = "study-media" }
         literature = @{
-            records_root = (Join-Path $Library "Notes")
+            records_root = $Records
             max_requests = 80
             model = @{ provider = "openai"; model = ""; api_mode = "responses"; base_url = "https://api.openai.com/v1"; json_mode = $true; max_output_tokens = 6000 }
         }

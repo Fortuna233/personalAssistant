@@ -10,6 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .library import Library
+from .zotero import ZoteroBridge
+from .synchronization import create_sync_router
 from .files import FileManager, FileConflict
 from .literature.service import ReadingService
 from .literature.notes import NoteExporter
@@ -48,6 +50,7 @@ def create_app(config, scan_on_start=True, model_gateway=None, start_worker=True
         raise ValueError("请先生成至少 24 字符的访问密钥")
     library = Library(config["library"], config["database"])
     files = FileManager(library)
+    zotero = ZoteroBridge(library, config.get("zotero", {}))
     literature_config = config.get("literature", {})
     literature = ReadingService(library, literature_config, model_gateway)
     note_exporter = NoteExporter(literature.store, literature_config.get("records_root"))
@@ -74,6 +77,20 @@ def create_app(config, scan_on_start=True, model_gateway=None, start_worker=True
             await scan()
             await asyncio.sleep(max(10, config.get("scan_seconds", 60)))
 
+    async def zotero_loop():
+        while True:
+            if zotero.settings()["enabled"]:
+                step = asyncio.create_task(asyncio.to_thread(zotero.sync))
+                try:
+                    await asyncio.shield(step)
+                    await scan()
+                except ValueError:
+                    pass  # A manual sync can already hold the bridge lock.
+                except asyncio.CancelledError:
+                    await step
+                    raise
+            await asyncio.sleep(max(30, config.get("zotero", {}).get("interval_seconds", 60)))
+
     @asynccontextmanager
     async def lifespan(app):
         tasks = []
@@ -81,6 +98,7 @@ def create_app(config, scan_on_start=True, model_gateway=None, start_worker=True
             tasks.append(asyncio.create_task(loop()))
         if start_worker:
             tasks.append(asyncio.create_task(run_worker(literature)))
+            tasks.append(asyncio.create_task(zotero_loop()))
         yield
         for task in tasks:
             task.cancel()
@@ -293,6 +311,7 @@ def create_app(config, scan_on_start=True, model_gateway=None, start_worker=True
         )
 
     app.include_router(create_router(literature, note_exporter, auth))
+    app.include_router(create_sync_router(library, note_exporter.root, config, auth, zotero))
 
     static = Path(__file__).parent / "static"
     app.mount("/", StaticFiles(directory=static, html=True), name="web")

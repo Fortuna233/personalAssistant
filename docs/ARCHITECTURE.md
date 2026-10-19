@@ -60,7 +60,7 @@ Android 本地 Obsidian ─┘             │
 - `files.py`：限制在资料库范围的文件管理、元数据、回收与身份迁移；与扫描共享进程内锁。
 - `app.py`：身份认证、请求校验、状态事务、API、索引生命周期。
 - `static/`：浏览器入口，只依赖 HTTP API。
-- `configure_sync.py`：Syncthing 本机 API 适配器。应用 API 不拥有或覆盖同步状态。
+- `configure_sync.py`：Syncthing 本机 API 适配器。应用 API 不推断全局同步完成；新增接收策略接口仅修改本机明确集合的受控忽略规则。
 - 阅读数据库与文件分开；同步任何设备的 SQLite 数据库都是禁止的。
 - 新文件使用随机稳定 ID，既有文件保留 ID。网页重命名或移动（包括目录）显式迁移路径，保留阅读记录；复制分配独立 ID。外部工具重命名时，仅唯一相同内容且旧路径消失的文件可自动关联；同时改名改内容仍可能无法识别。
 - 进程内锁协调扫描和文件操作，修改前核对 stat 版本、目标冲突、Windows 文件名与路径边界。该锁不控制 Obsidian/Syncthing 外部进程，无法承诺跨进程文件系统事务；避免多端同时移动同一路径。
@@ -103,3 +103,11 @@ Android 本地 Obsidian ─┘             │
 `literature/` 是首个按业务能力独立组织的模块，包含 contracts、sources、models、store、service、notes、api 和 worker。通过模型网关替换 OpenAI/兼容服务，通过 NoteExporter 写独立个人 Git 仓库。后台在服务器生命周期中独立于浏览器运行，步骤结果、原文和能力快照持久化。
 
 当前已实现文献固定能力 ID、规则版本、显式任务触发与快照自动加载；通用能力提炼与语义匹配仍未实现。文献模块的阅读偏好版本保存在运行库，默认流程和约束由代码 Git 管理；不把这一阶段误标为完整 CAPABILITIES.md 已落地。详见 [文献阅读](LITERATURE_READING.md)。
+
+## 资料与 Zotero 边界（已实现，实机待验证）
+
+记录仓库 `literature.records_root` 与资料目录 `library` 物理分离。Syncthing 使用 `study-notes` / `study-media` 两个集合；Git 内部目录不参与文件同步。`synchronization.py` 将当前实例的 PDF/EPUB 接收策略转换为 Syncthing 忽略规则，保留其他规则。
+
+`zotero.py` 是独立适配器：只读本机 API、稳定附件 key、文件 SHA-256 三方比较、原子复制、冲突停止；业务不直接访问 Zotero SQLite。Zotero 官方负责条目同步，附件桥接负责本机与 Media 之间的文件传播，Syncthing 负责设备间传输。Web API 与本机 API 的版本不能混用；当前采用每轮完整分页快照并校验同轮版本，不维护跨设备版本游标。未删除 Media 存量附件，也未实现 Zotero 元数据写回。桌面桥接 CLI 与主机 API 共用适配器；状态保存在本机 SQLite。
+
+界面三窗独立滚动；阅读/问答/笔记服务仍通过原有 API 组合，布局不侵入模型网关。未来替换 Zotero 接入或同步引擎，应保留这些存储和 API 边界。部署及迁移步骤见 `ZOTERO_SYNC.md`。

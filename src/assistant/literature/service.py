@@ -41,12 +41,30 @@ class ReadingService:
         readiness = self.gateway.readiness(self.store.settings())
         if not readiness["ready"]:
             raise ValueError("请配置：" + "、".join(readiness["missing"]))
+        history = [
+            {
+                "question": prior["purpose"],
+                "answer": "\n".join(answer["answer"] for answer in prior["result"]["answers"])[
+                    :2000
+                ],
+            }
+            for prior in self.store.jobs()
+            if prior["kind"] == "question"
+            and prior["status"] == "completed"
+            and prior.get("question_context", {}).get("parent_job_id") == job_id
+            and prior.get("question_context", {}).get("section_id") == section_id
+        ][:6][::-1]
         return self.store.enqueue(
             source,
             job["topic"],
             text.strip(),
             "question",
-            {"parent_job_id": job_id, "section_id": section_id, "title": section["title"]},
+            {
+                "parent_job_id": job_id,
+                "section_id": section_id,
+                "title": section["title"],
+                "history": history,
+            },
         )
 
     def call(self, job, key, instruction, payload, contract, validate=None):
@@ -92,6 +110,7 @@ class ReadingService:
                         "stage": f"回答分段 {i + 1}",
                         "question": job["purpose"],
                         "section": source["question_context"]["title"],
+                        "conversation_history": source["question_context"].get("history", []),
                         "source_blocks": part,
                     },
                     Answer,

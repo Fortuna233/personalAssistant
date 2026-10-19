@@ -33,13 +33,13 @@ Syncthing 的 `.git` 忽略规则必须在每台设备生效。不得通过 Sync
    ```
 
    该文件含私人记录及完整历史，不放进助手代码目录或上传到代码远程。
-3. 在 Windows 将 bundle 克隆到新的、空的本地记录目录，例如 `C:\StudyLibrary\Notes`；原目录若已存在则先备份，不能直接覆盖。
+3. 在 Windows 将 bundle 克隆到新的、空的本地记录目录，例如 `D:\PersonalRecords`；原目录若已存在则先备份，不能直接覆盖。
 
    ```powershell
-   git clone E:\RecordBackups\records.bundle C:\StudyLibrary\Notes
+   git clone E:\RecordBackups\records.bundle D:\PersonalRecords
    ```
 
-4. 核对提交历史和文件后，把该目录配置成 Windows 的 Notes 同步集合。Mac、Android 保留 `.git` 忽略规则，先核对差异再恢复同步。
+4. 核对提交历史和文件后，把该目录配置成 Windows 的 study-notes 同步集合。Mac、Android 保留 `.git` 忽略规则，先核对差异再恢复同步。
 5. Windows 接管提交责任；Mac 的现有 `.git` 保留作为本地历史副本，不再同时执行自动提交/checkout。其 working tree 因同步变化而显示修改是预期现象。
 
 只有同步进入空闲且不存在 `.sync-conflict-*` 文件时，才适合生成主机快照；“空闲”仍不是全局一致事务保证。自动提交服务需校验文件在读取期间未变化，检测到变化则重试，不能将半写入文件标为成功快照。
@@ -89,3 +89,5 @@ git log --oneline
 尚未实现：Windows 接管、自动 checkpoint、Git 历史网页、任务 protocol 版本引用、恢复操作审批。远程托管和任何定时自动化尚未配置。
 
 验收需覆盖：代码仓库无私人原文、记录修改能 diff、protocol 历史可读取、同步不传播 `.git`、并发编辑不生成不一致快照、提交失败不丢工作区、历史恢复追加提交、转移主机后历史连续。
+
+新的存储布局使用互不嵌套的 `D:\PersonalRecords` 和 `D:\StudyLibrary\Media`，迁移步骤见 [Zotero 与同步](ZOTERO_SYNC.md)。旧目录不会自动搬迁。

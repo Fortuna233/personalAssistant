@@ -1,10 +1,12 @@
 (() => {
   let jobs = [], settings = null, activeJob = null, exportJob = null, previewRevision = null;
-  let questionBusy = false, submitting = false;
+  let questionBusy = false, submitting = false, inlineRevision = null, inlineDirty = false;
   const labels = {background:'背景、目的及意义',methods:'研究设计与方法',results:'结果与结论',author_discussion:'作者讨论',assistant_analysis:'助手分析',suggested_questions:'建议思考（助手）',limitations:'未覆盖与待核对'};
   const statusLabels = {queued:'等待执行',running:'处理中',completed:'待核对',failed:'失败',cancelled:'已取消'};
-  function message(error) { $('lit-state').textContent = error.message || error; }
+  function message(error) { const text=error.message||error;$('lit-state').textContent=text;$('lit-chat-status').textContent=text; }
   function setView(literature) {
+    if(inlineDirty&&!confirm('尚有未保存的想法，确定切换？'))return;inlineDirty=false;
+    $('connections-open').hidden=false;
     $('workspace').classList.toggle('literature-mode',literature);
     $('literature-view').hidden = !literature;
     document.querySelector('.library').hidden = literature;
@@ -20,8 +22,8 @@
     } catch(error) { message(error); }
   };
   function updateModelState() {
-    if(!settings)return;
-    $('lit-start').disabled=!settings.model_status.ready;
+    $('connections-open').hidden=false;if(!settings)return;
+    $('lit-start').disabled=!settings.model_status.ready;$('lit-question-form').querySelector('button').disabled=!settings.model_status.ready;
     message(settings.model_status.ready?'':'尚未配置模型：'+settings.model_status.missing.join('、'));
   }
   function fillSources() {
@@ -99,10 +101,17 @@
     catch(error){message(error);}finally{submitting=false;$('lit-start').disabled=!settings?.model_status.ready;}
   };
   async function openStudy(id) {
+    if(inlineDirty&&!confirm('尚有未保存的想法，确定切换文献？'))return;
     activeJob=await api('literature/jobs/'+id);if(activeJob.status!=='completed')return;
     $('lit-study-title').textContent=activeJob.result.metadata.title;
     $('lit-section').replaceChildren();activeJob.result.sections.forEach(section=>{const option=element('option',section.title);option.value=section.id;$('lit-section').append(option);});
-    $('lit-study').hidden=false;renderSection();renderAnswers();$('lit-study').scrollIntoView({behavior:'smooth',block:'start'});
+    $('lit-study').hidden=false;$('literature-view').classList.add('studying');renderSection();renderAnswers();
+    const doc=documents.find(doc=>doc.id===activeJob.document_id), url='/api/documents/'+activeJob.document_id+'/file';
+    $('lit-original').href=url;$('lit-paper-frame').hidden=doc?.kind!=='.pdf';$('lit-section-source').hidden=doc?.kind==='.pdf';
+    if(doc?.kind==='.pdf')$('lit-paper-frame').src=url;
+    const value=await api('literature/jobs/'+id+'/notes');inlineRevision=value.notes_revision;inlineDirty=false;
+    $('lit-inline-ideas').value=value.ideas;$('lit-inline-preview').textContent=value.existing_markdown||value.markdown;
+    $('lit-inline-save').disabled=!value.ready;$('lit-inline-status').textContent=value.ready?value.note_path:value.reason;
   }
   function renderSection() {
     if(!activeJob)return;const section=activeJob.result.sections.find(s=>s.id===$('lit-section').value);if(!section)return;
@@ -112,7 +121,13 @@
     if(section.analysis.evidence?.length){$('lit-section-analysis').append(element('h4','原文证据'));section.analysis.evidence.forEach(e=>$('lit-section-analysis').append(element('blockquote','['+e.block_id+'] '+e.quote)));}
     renderAnswers();
   }
-  $('lit-section').onchange=renderSection;$('lit-study-close').onclick=()=>{$('lit-study').hidden=true;activeJob=null;};
+  $('lit-section').onchange=renderSection;
+  $('lit-inline-ideas').oninput=()=>{inlineDirty=true;};
+  $('lit-inline-save').onclick=async()=>{if(!activeJob)return;$('lit-inline-save').disabled=true;
+    try{const result=await api('literature/jobs/'+activeJob.id+'/notes/save',{method:'POST',body:JSON.stringify({ideas:$('lit-inline-ideas').value,notes_revision:inlineRevision})});const value=await api('literature/jobs/'+activeJob.id+'/notes');inlineRevision=value.notes_revision;inlineDirty=false;$('lit-inline-preview').textContent=value.existing_markdown||value.markdown;$('lit-inline-status').textContent=result.version_pending?'文件已保存，Git 提交待处理：'+result.error:'已提交 '+result.commit.slice(0,12);await refreshLiterature();}
+    catch(error){$('lit-inline-status').textContent=error.message;}finally{$('lit-inline-save').disabled=false;}};
+  $('lit-study-close').onclick=()=>{if(inlineDirty&&!confirm('尚有未保存的想法，确定离开？'))return;$('lit-study').hidden=true;$('literature-view').classList.remove('studying');$('lit-paper-frame').removeAttribute('src');activeJob=null;};
+  window.addEventListener('beforeunload',event=>{if(inlineDirty){event.preventDefault();event.returnValue='';}});
   $('lit-question-form').onsubmit=async event=>{
     event.preventDefault();if(!activeJob||questionBusy)return;questionBusy=true;
     try{await api('literature/jobs/'+activeJob.id+'/questions/new',{method:'POST',body:JSON.stringify({section_id:$('lit-section').value,text:$('lit-question').value})});$('lit-question').value='';await refreshLiterature();}
@@ -120,7 +135,7 @@
   };
   function renderAnswers(){
     $('lit-answers').replaceChildren();if(!activeJob)return;
-    jobs.filter(job=>job.kind==='question'&&job.question_context?.parent_job_id===activeJob.id&&job.question_context?.section_id===$('lit-section').value).forEach(job=>{
+    jobs.filter(job=>job.kind==='question'&&job.question_context?.parent_job_id===activeJob.id&&job.question_context?.section_id===$('lit-section').value).reverse().forEach(job=>{
       const entry=element('article','','lit-answer');entry.append(element('strong',job.purpose));
       if(job.result)job.result.answers.forEach(answer=>{entry.append(element('p',answer.answer));answer.evidence.forEach(e=>entry.append(element('blockquote','['+e.block_id+'] '+e.quote)));answer.limitations.forEach(v=>entry.append(element('p',v,'hint')));});
       else entry.append(element('p',job.error||job.progress));$('lit-answers').append(entry);

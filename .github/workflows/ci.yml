@@ -45,6 +45,7 @@ jobs:
         run: |
           node --check src/assistant/static/app.js
           node --check src/assistant/static/literature.js
+          node --check src/assistant/static/connections.js
       - name: Parse Windows scripts
         if: runner.os == 'Windows'
         shell: pwsh

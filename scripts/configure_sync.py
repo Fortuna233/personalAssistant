@@ -27,7 +27,8 @@ def request(base, key, route, body=None, method=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", required=True)
+    parser.add_argument("--root", required=True, help="非 Git 资料目录（Media）")
+    parser.add_argument("--records-root", required=True, help="独立个人 Git 仓库根目录")
     parser.add_argument(
         "--device", action="append", default=[], help="DEVICE-ID=NAME=IP; may repeat"
     )
@@ -62,14 +63,17 @@ def main():
     root = Path(args.root).resolve()
     existing_folders = {f["id"] for f in config["folders"]}
     occupied_paths = {str(Path(f["path"]).resolve()) for f in config["folders"]}
-    for folder_id, name in [
-        ("study-notes", "Notes"),
-        ("study-books", "Books"),
-        ("study-experiments", "Experiments"),
+    records = Path(args.records_root).resolve()
+    if records == root or records.is_relative_to(root) or root.is_relative_to(records):
+        parser.error("记录仓库与资料目录必须互不嵌套")
+    for folder_id, name, path in [
+        ("study-notes", "Records", records),
+        ("study-media", "Media", root),
     ]:
-        path = root / name
         if folder_id in existing_folders:
             existing = next(f for f in config["folders"] if f["id"] == folder_id)
+            if Path(existing["path"]).resolve() != path:
+                raise SystemExit("已有同步集合路径与新目录不同，请按迁移文档检查：" + folder_id)
             shared = {d["deviceID"] for d in existing["devices"]}
             additions = [d for d in requested if d["deviceID"] not in shared]
             if additions:
@@ -82,7 +86,10 @@ def main():
                 )
             print("保留已有配置：", folder_id)
             continue
-        if str(path) in occupied_paths:
+        if any(
+            path == Path(p) or path.is_relative_to(Path(p)) or Path(p).is_relative_to(path)
+            for p in occupied_paths
+        ):
             raise SystemExit("目录已由其他同步集合管理，请先人工检查：" + str(path))
         path.mkdir(parents=True, exist_ok=True)
         devices = [{"deviceID": request(base, key, "system/status")["myID"]}] + requested

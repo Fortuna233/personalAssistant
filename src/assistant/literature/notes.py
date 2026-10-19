@@ -202,6 +202,7 @@ class NoteExporter:
             **status,
             "note_path": note,
             "table_path": table,
+            "existing_markdown": existing,
             "markdown": detail_markdown(job),
             "ideas": self.ideas(existing),
             "notes_revision": digest(existing),

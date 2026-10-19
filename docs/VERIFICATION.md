@@ -54,3 +54,11 @@ node --check src/assistant/static/app.js
 - 本机浏览器已实际验证“文献”五列表格、Methods 小标题切换、原文/证据对照、个人想法保存、Git 提交成功和表格更新。
 - 演示条目明确标识为本地合成测试，不是真实论文分析；个人想法与笔记写入独立临时 Git 仓库，未修改真实个人 Notes 仓库。
 - 本机未配置模型 API Key。云端分析质量、账号模型兼容性、Windows/Android 和校园网三端行为仍需真实环境验证。
+
+## 三分屏与 Zotero 本机桥接
+
+- 63 项测试通过；Zotero 以 HTTP mock 验证，无真实私人附件进入演示。
+- 两套临时真实 Syncthing 实例验证通过：重复配置、两集合、记录双向同步、书籍选择接收与来源保留；未连接用户真实设备。
+- 浏览器实际验证：三窗比例、原文节切换、右侧想法保存入口、同步面板、未启动 Zotero 时的明确提示。
+- 本机检测到 Zotero 安装与默认 storage 目录，但本机 API 未运行；未启用其权限或导入私人资料。Windows / Android 附件端到端同步仍待实机验收。
+- 新布局与双目录配置不自动迁移旧 Notes / Books / Experiments 集合；详见 `ZOTERO_SYNC.md`。

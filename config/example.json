@@ -1,5 +1,5 @@
 {
-  "library": "D:/StudyLibrary",
+  "library": "D:/StudyLibrary/Media",
   "database": "runtime/assistant.db",
   "host": "127.0.0.1",
   "port": 8765,
@@ -16,5 +16,17 @@
       "json_mode": true,
       "max_output_tokens": 6000
     }
+  },
+  "zotero": {
+    "enabled": false,
+    "kind": "users",
+    "library_id": "0",
+    "allowed_roots": [],
+    "storage_root": "",
+    "interval_seconds": 60,
+    "max_attachment_bytes": 2000000000
+  },
+  "sync": {
+    "media_folder_id": "study-media"
   }
 }

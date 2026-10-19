@@ -85,6 +85,8 @@ try:
         str(project / "scripts/configure_sync.py"),
         "--root",
         str(root / "library"),
+        "--records-root",
+        str(root / "records"),
         "--url",
         a[0],
         "--device",
@@ -94,7 +96,7 @@ try:
     subprocess.run(command, env=env, check=True, stdout=subprocess.DEVNULL)
     subprocess.run(command, env=env, check=True, stdout=subprocess.DEVNULL)
     config = adapter.request(a[0], a[1], "config")
-    assert len(config["folders"]) == 3
+    assert len(config["folders"]) == 2
     assert not config["options"]["globalAnnounceEnabled"]
     assert not config["options"]["relaysEnabled"]
     assert all(f["versioning"]["type"] == "staggered" for f in config["folders"])
@@ -117,7 +119,7 @@ try:
         }
     )
     adapter.request(b[0], b[1], "config/folders", folder, "POST")
-    source = root / "library/Notes/实验同步.md"
+    source = root / "records/实验同步.md"
     source.write_text("Mac-like edit", encoding="utf-8")
     adapter.request(a[0], a[1], "db/scan?folder=study-notes", {}, "POST")
     target = root / "peer-notes/实验同步.md"
@@ -135,8 +137,37 @@ try:
         time.sleep(0.1)
     else:
         raise RuntimeError("Reverse sync timeout")
+    media = adapter.request(b[0], b[1], "config/defaults/folder")
+    media.update(
+        {
+            "id": "study-media",
+            "label": "Media",
+            "path": str(root / "peer-media"),
+            "type": "sendreceive",
+            "devices": [{"deviceID": a[2]}, {"deviceID": b[2]}],
+            "rescanIntervalS": 1,
+        }
+    )
+    adapter.request(b[0], b[1], "config/folders", media, "POST")
+    adapter.request(
+        b[0], b[1], "db/ignores?folder=study-media", {"ignore": ["/Books/skipped.epub"]}, "POST"
+    )
+    books = root / "library/Books"
+    books.mkdir()
+    (books / "kept.epub").write_bytes(b"selected attachment")
+    (books / "skipped.epub").write_bytes(b"not selected")
+    adapter.request(a[0], a[1], "db/scan?folder=study-media", {}, "POST")
+    received = root / "peer-media/Books/kept.epub"
+    for attempt in range(200):
+        if received.exists() and received.read_bytes() == b"selected attachment":
+            break
+        time.sleep(0.1)
+    else:
+        raise RuntimeError("Selected media sync timeout")
+    assert not (root / "peer-media/Books/skipped.epub").exists()
+    assert (books / "skipped.epub").exists()
     print(
-        "PASS: real Syncthing; repeat-safe configuration, LAN-only options, versioning, ignores, bidirectional file transfer"
+        "PASS: real Syncthing; repeat-safe configuration, LAN-only options, versioning, ignores, bidirectional records and selective media transfer"
     )
 finally:
     for process in processes:

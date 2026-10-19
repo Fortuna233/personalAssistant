@@ -428,3 +428,20 @@ def test_personal_repository_must_not_be_inside_code_tree(reading):
     exporter = NoteExporter(service.store, code / "private-records", code_root=code)
     assert not exporter.readiness()["ready"]
     assert "不能位于" in exporter.readiness()["reason"]
+
+
+def test_followup_question_pins_only_same_section_history(reading):
+    service, fake, _, _ = reading
+    parent = completed(reading)
+    methods = next(s for s in parent["result"]["sections"] if s["title"] == "Methods")
+    other = next(s for s in parent["result"]["sections"] if s["title"] == "Results")
+    service.question(parent["id"], methods["id"], "What was the control?")
+    service.run_next()
+    service.question(parent["id"], other["id"], "Unrelated question")
+    service.run_next()
+    followup = service.question(parent["id"], methods["id"], "Why that control?")
+    service.run_next()
+    history = fake.calls[-1][2]["conversation_history"]
+    assert len(history) == 1
+    assert history[0]["question"] == "What was the control?"
+    assert followup["question_context"]["history"] == history

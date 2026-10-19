@@ -10,7 +10,7 @@
 
 ```powershell
 cd C:\StudyHarbor
-powershell -ExecutionPolicy Bypass -File scripts\setup-windows.ps1 -Library C:\StudyLibrary
+powershell -ExecutionPolicy Bypass -File scripts\setup-windows.ps1 -Library C:\StudyLibrary\Media -Records C:\PersonalRecords
 .\.venv\Scripts\python.exe -m assistant --config config/local.json
 ```
 
@@ -22,9 +22,10 @@ powershell -ExecutionPolicy Bypass -File scripts\setup-windows.ps1 -Library C:\S
 ```text
 C:\StudyHarbor\                 代码、虚拟环境、配置
 C:\StudyHarbor\runtime\         数据库，不同步
-C:\StudyLibrary\Notes\          Obsidian 库与笔记内嵌图片
-C:\StudyLibrary\Books\          PDF / EPUB，按课程子目录
-C:\StudyLibrary\Experiments\    CSV / 图片等原始实验数据
+C:\PersonalRecords\             独立 Git：Obsidian 笔记、protocol
+C:\StudyLibrary\Media\Books\    EPUB / 书籍
+C:\StudyLibrary\Media\Papers\   PDF / Zotero 文献
+C:\StudyLibrary\Media\Experiments\ CSV / 图片等原始实验数据
 ```
 
 默认仅索引上述 library 范围，隐藏目录、越界符号链接不读取。索引后台每 60 秒更新；首次解析几 GB 书籍可能较久，网页显示索引状态。
@@ -56,11 +57,11 @@ New-NetFirewallRule -DisplayName "StudyHarbor sync" -Direction Inbound -Action A
 
 ```powershell
 $env:SYNCTHING_API_KEY = Read-Host "本机 Syncthing API Key"
-.\.venv\Scripts\python.exe scripts\configure_sync.py --root C:\StudyLibrary --device "MAC_DEVICE_ID=Mac=MAC_IP" --device "ANDROID_DEVICE_ID=Android=ANDROID_IP"
+.\.venv\Scripts\python.exe scripts\configure_sync.py --root C:\StudyLibrary\Media --records-root C:\PersonalRecords --device "MAC_DEVICE_ID=Mac=MAC_IP" --device "ANDROID_DEVICE_ID=Android=ANDROID_IP"
 Remove-Item Env:\SYNCTHING_API_KEY
 ```
 
-脚本创建 `study-notes`、`study-books`、`study-experiments` 三个集合，启用错时版本管理，并只将其分享给显式指定的设备。已有同 ID 集合保留原路径与配置，仅追加显式设备；已有其他集合管理同一路径则拒绝。脚本不安装 Syncthing、不写客户端二进制、不会复制现有资料。需要重启时从 Syncthing 本机管理页重启。
+脚本创建 `study-notes`、`study-media` 两个集合，启用错时版本管理，并只将其分享给显式指定的设备。已有同 ID 集合只有路径一致时才追加显式设备；路径不同或目录重叠则拒绝。迁移旧三集合前请阅读 [迁移说明](ZOTERO_SYNC.md)。脚本不安装 Syncthing、不写客户端二进制、不会复制现有资料。需要重启时从 Syncthing 本机管理页重启。
 
 Mac 接受 `study-notes` 到**新建的测试目录**如 `~/StudyTest/Notes`；Android 接受到 `Documents/StudyTest/Notes`。两端都用 Obsidian 打开对应本地目录。三端文件夹类型均为 Send & Receive。
 
@@ -79,11 +80,9 @@ Thumbs.db
 
 ### 手机书籍按需
 
-Syncthing 是按集合复制，不是按需占位云盘。Android 初期只接受 Notes 集合；不要接受整个 Books / Experiments。
+Syncthing 不提供按需占位符。Android 可接受 `study-notes`，在接受 `study-media` 前按 [Zotero 与同步](ZOTERO_SYNC.md) 的忽略规则选择接收 Papers/Books；实验数据保持同步。忽略规则应在手机本机配置，不能在主机网页设置后认为它只影响手机。常开主机建议保留全部资料。
 
-需要离线某课程时，在 Windows 新建如 `study-books-courseA`，路径 `Books/课程A`，仅分享该集合给手机。在 Windows 的父 Books 集合设置忽略 `课程A` 后，才建立子集合，避免重叠同步。Mac 也按相同集合边界接收。更简单的首版方法：使用网页“打开原文件”另存到手机，作为只读离线副本；这些下载副本不支持文件修改回传，阅读状态仍通过网页在线保存。
-
-不建议用扩展名全局过滤的方式同步 Obsidian 库：容易让笔记内嵌图片或相对路径附件失联。
+新添 Zotero 条目使用官方元数据同步；附件来源电脑需运行本机桥接，并让 Syncthing 保持运行。首次使用真实资料前，验证新增条目、新附件到主机、单端修改、双端冲突与离线恢复。
 
 ## 5. 导入现有资料
 
