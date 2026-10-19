@@ -1,6 +1,6 @@
 # 沈轻媞
 
-Windows 10 常开主机上的个人学习资料中心。Windows、Mac、Android 使用本地 Obsidian，通过 Syncthing 在校园网双向同步；主机提供统一网页，用于检索、阅读、保存阅读进度和批注。后续 Linux 可加入相同同步集合。
+Windows 10 常开主机上的个人学习资料中心。Windows、Mac、Android 使用本地 Obsidian，通过 Syncthing 在校园网双向同步；主机提供统一 API，主要通过命令行对话使用；网页对话按需打开资料、论文和笔记工作区。后续 Linux 可加入相同同步集合。
 
 当前是可运行的第一版实现，不表示三台真实设备已配置或验收。未修改现有 `/Users/renhan/Documents/Notes`。
 
@@ -77,4 +77,6 @@ Syncthing 是同步，不是完整备份；主机本地修改不会由其本机�
 
 打开“文献”，在“模型与规则”配置 OpenAI / DeepSeek / Kimi 或兼容服务，主机通过环境变量读取密钥。导入/选文件只在本机提取信息，点击后才调用模型。全文初稿、原文小标题对照、逐节提问、五列主题表、个人想法保护、独立 Git 提交及阅读规则版本已实现。详细配置、使用流程、best practice 与限制见 [文献阅读说明](docs/LITERATURE_READING.md)。未配置密钥不会显示虚假分析结果。
 
-文献「逐节阅读」已改为左上论文、左下 Agent、右侧笔记的三分屏。右上角「同步」显示 Zotero 桥接状态与本机 PDF/EPUB 接收选择。Zotero 桥接需启用本机 API 并配置明确的附件目录；尚未完成真实多设备验收。
+默认是独屏对话；文献「逐节阅读」在左侧保留对话，右侧显示论文与笔记。右上角「同步」显示 Zotero 桥接状态与本机 PDF/EPUB 接收选择。Zotero 桥接需启用本机 API 并配置明确的附件目录；尚未完成真实多设备验收。
+
+主要入口：`.venv/bin/python -m assistant chat --config config/local.json`；主机使用 `serve`，旧的 `--config` 启动命令保持兼容。终端操作、模型设置、对话持久化与按需工作区见 [对话与命令行](docs/CONVERSATION_CLI.md)。

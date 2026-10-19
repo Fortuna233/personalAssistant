@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .conversation import ConversationService, create_conversation_router
 from .library import Library
 from .zotero import ZoteroBridge
 from .synchronization import create_sync_router
@@ -311,6 +312,7 @@ def create_app(config, scan_on_start=True, model_gateway=None, start_worker=True
         )
 
     app.include_router(create_router(literature, note_exporter, auth))
+    app.include_router(create_conversation_router(ConversationService(literature), auth))
     app.include_router(create_sync_router(library, note_exporter.root, config, auth, zotero))
 
     static = Path(__file__).parent / "static"

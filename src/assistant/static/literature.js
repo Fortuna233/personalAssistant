@@ -13,6 +13,12 @@
     $('reader').hidden = true; current = null;
     if(literature)refreshLiterature().catch(message);
   }
+  window.openLiteratureWorkspace = async documentId => {
+    $('workspace').classList.add('literature-mode');$('literature-view').hidden=false;document.querySelector('.library').hidden=true;await refreshLiterature();
+    if(documentId){$('lit-source').value=documentId;$('lit-source').dispatchEvent(new Event('change'));}
+  };
+  window.activeReadingContext = () => activeJob ? {job_id:activeJob.id,section_id:$('lit-section').value} : null;
+  window.canLeaveReading = () => !inlineDirty||confirm('尚有未保存的想法，确定切换？');
   $('literature-tab').onclick=()=>setView(true);
   $('files-tab').onclick=()=>setView(false);
   window.literatureReady = async () => {
@@ -105,7 +111,7 @@
     activeJob=await api('literature/jobs/'+id);if(activeJob.status!=='completed')return;
     $('lit-study-title').textContent=activeJob.result.metadata.title;
     $('lit-section').replaceChildren();activeJob.result.sections.forEach(section=>{const option=element('option',section.title);option.value=section.id;$('lit-section').append(option);});
-    $('lit-study').hidden=false;$('literature-view').classList.add('studying');renderSection();renderAnswers();
+    $('lit-study').hidden=false;$('literature-view').classList.add('studying');window.dispatchEvent(new Event('reading-context-changed'));renderSection();renderAnswers();
     const doc=documents.find(doc=>doc.id===activeJob.document_id), url='/api/documents/'+activeJob.document_id+'/file';
     $('lit-original').href=url;$('lit-paper-frame').hidden=doc?.kind!=='.pdf';$('lit-section-source').hidden=doc?.kind==='.pdf';
     if(doc?.kind==='.pdf')$('lit-paper-frame').src=url;
@@ -126,7 +132,7 @@
   $('lit-inline-save').onclick=async()=>{if(!activeJob)return;$('lit-inline-save').disabled=true;
     try{const result=await api('literature/jobs/'+activeJob.id+'/notes/save',{method:'POST',body:JSON.stringify({ideas:$('lit-inline-ideas').value,notes_revision:inlineRevision})});const value=await api('literature/jobs/'+activeJob.id+'/notes');inlineRevision=value.notes_revision;inlineDirty=false;$('lit-inline-preview').textContent=value.existing_markdown||value.markdown;$('lit-inline-status').textContent=result.version_pending?'文件已保存，Git 提交待处理：'+result.error:'已提交 '+result.commit.slice(0,12);await refreshLiterature();}
     catch(error){$('lit-inline-status').textContent=error.message;}finally{$('lit-inline-save').disabled=false;}};
-  $('lit-study-close').onclick=()=>{if(inlineDirty&&!confirm('尚有未保存的想法，确定离开？'))return;$('lit-study').hidden=true;$('literature-view').classList.remove('studying');$('lit-paper-frame').removeAttribute('src');activeJob=null;};
+  $('lit-study-close').onclick=()=>{if(inlineDirty&&!confirm('尚有未保存的想法，确定离开？'))return;$('lit-study').hidden=true;$('literature-view').classList.remove('studying');$('lit-paper-frame').removeAttribute('src');activeJob=null;inlineDirty=false;window.dispatchEvent(new Event('reading-context-changed'));};
   window.addEventListener('beforeunload',event=>{if(inlineDirty){event.preventDefault();event.returnValue='';}});
   $('lit-question-form').onsubmit=async event=>{
     event.preventDefault();if(!activeJob||questionBusy)return;questionBusy=true;
