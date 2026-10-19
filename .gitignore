@@ -11,3 +11,4 @@ data/
 .env
 .DS_Store
 dist/
+*.literature.lock

@@ -141,7 +141,7 @@ document.querySelectorAll('[data-sort]').forEach(button=>button.onclick=()=>chan
 async function loadTrash(){const rows=await api('files/trash');$('trash-list').replaceChildren();if(!rows.length)$('trash-list').append(element('p','回收区为空'));rows.forEach(row=>{const item=element('div','','trash-item');item.append(element('strong',row.path),element('small',formatDate(row.deleted_at)));const restore=element('button','恢复');restore.onclick=async()=>{restore.disabled=true;try{await api('files/trash/'+row.id+'/restore',{method:'POST'});await refresh();await loadTrash();fileMessage('已恢复：'+row.path);}catch(error){$('trash-error').textContent=error.message;restore.disabled=false;}};item.append(restore);$('trash-list').append(item);});}
 $('trash-open').onclick=async()=>{$('trash-error').textContent='';$('trash-dialog').showModal();try{await loadTrash();}catch(error){$('trash-error').textContent=error.message;}};
 $('trash-close').onclick=()=>$('trash-dialog').close();
-async function enter() { await refresh(); $('login').hidden=true; $('workspace').hidden=false; $('logout').hidden=false; }
+async function enter() { await refresh(); $('login').hidden=true; $('workspace').hidden=false; $('logout').hidden=false; $('view-tabs').hidden=false; if(window.literatureReady)window.literatureReady(); }
 $('login-form').onsubmit=async event=>{event.preventDefault();try{await api('login',{method:'POST',body:JSON.stringify({token:$('token').value})});$('token').value='';await enter();}catch(e){$('login-error').textContent=e.message;}};
 $('logout').onclick=async()=>{await api('logout',{method:'POST'});location.reload();};
 $('filter').onchange=()=>render();

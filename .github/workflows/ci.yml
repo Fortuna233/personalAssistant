@@ -42,7 +42,9 @@ jobs:
       - name: Test
         run: python -m pytest -q
       - name: Check browser script syntax
-        run: node --check src/assistant/static/app.js
+        run: |
+          node --check src/assistant/static/app.js
+          node --check src/assistant/static/literature.js
       - name: Parse Windows scripts
         if: runner.os == 'Windows'
         shell: pwsh

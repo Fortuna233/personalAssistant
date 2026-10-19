@@ -97,3 +97,9 @@ Android 本地 Obsidian ─┘             │
 - https://docs.syncthing.net/rest/config.html
 - https://github.com/researchxxl/syncthing-android
 - https://obsidian.md/help/sync-notes
+
+## 文献阅读实现进展
+
+`literature/` 是首个按业务能力独立组织的模块，包含 contracts、sources、models、store、service、notes、api 和 worker。通过模型网关替换 OpenAI/兼容服务，通过 NoteExporter 写独立个人 Git 仓库。后台在服务器生命周期中独立于浏览器运行，步骤结果、原文和能力快照持久化。
+
+当前已实现文献固定能力 ID、规则版本、显式任务触发与快照自动加载；通用能力提炼与语义匹配仍未实现。文献模块的阅读偏好版本保存在运行库，默认流程和约束由代码 Git 管理；不把这一阶段误标为完整 CAPABILITIES.md 已落地。详见 [文献阅读](LITERATURE_READING.md)。

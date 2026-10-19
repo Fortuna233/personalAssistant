@@ -46,3 +46,11 @@ node --check src/assistant/static/app.js
 - Ruff 静态/格式检查和前端 JavaScript 语法检查通过。
 - 本地浏览器已观察到文件树、列表日期、排序与新建文件成功后的即时更新。完整移动/复制/恢复流程通过 API 与服务层回归验证；尚未声称三端真实同步测试通过。
 - 文件操作仅在合成演示目录和临时测试目录执行，未接入 `/Users/renhan/Documents/Notes`。
+
+## 文献阅读实现验证
+
+- 共 51 项 pytest 回归通过：全文快照、小标题与引用校验、失败续跑、去重缓存、规则跨会话加载、旧快照保留、章节问答、独立 Git 输出、个人区域保护、暂存区保护、Git 失败保留文件、取消、请求上限、空扫描 PDF 与单 Worker 锁。
+- OpenAI Responses、DeepSeek/Kimi Chat Completions 的 HTTP 请求/响应契约通过 MockTransport 测试；未使用真实云端账号测试。
+- 本机浏览器已实际验证“文献”五列表格、Methods 小标题切换、原文/证据对照、个人想法保存、Git 提交成功和表格更新。
+- 演示条目明确标识为本地合成测试，不是真实论文分析；个人想法与笔记写入独立临时 Git 仓库，未修改真实个人 Notes 仓库。
+- 本机未配置模型 API Key。云端分析质量、账号模型兼容性、Windows/Android 和校园网三端行为仍需真实环境验证。

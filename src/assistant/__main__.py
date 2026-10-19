@@ -15,4 +15,7 @@ for field in ("library", "database"):
     path = Path(config[field])
     if not path.is_absolute():
         config[field] = str(config_path.parent.parent / path)
+records_root = config.get("literature", {}).get("records_root")
+if records_root and not Path(records_root).is_absolute():
+    config["literature"]["records_root"] = str(config_path.parent.parent / records_root)
 uvicorn.run(create_app(config), host=config.get("host", "127.0.0.1"), port=config.get("port", 8765))

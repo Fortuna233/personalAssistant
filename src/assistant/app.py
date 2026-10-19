@@ -11,6 +11,10 @@ from pydantic import BaseModel, Field
 
 from .library import Library
 from .files import FileManager, FileConflict
+from .literature.service import ReadingService
+from .literature.notes import NoteExporter
+from .literature.api import create_router
+from .literature.worker import run_worker
 
 
 class Login(BaseModel):
@@ -38,12 +42,16 @@ class FileOperation(BaseModel):
     content: str = Field(default="", max_length=1000000)
 
 
-def create_app(config, scan_on_start=True):
+def create_app(config, scan_on_start=True, model_gateway=None, start_worker=True):
     token = config["token"]
     if len(token) < 24 or token.startswith("REPLACE_"):
         raise ValueError("请先生成至少 24 字符的访问密钥")
     library = Library(config["library"], config["database"])
     files = FileManager(library)
+    literature_config = config.get("literature", {})
+    literature = ReadingService(library, literature_config, model_gateway)
+    note_exporter = NoteExporter(literature.store, literature_config.get("records_root"))
+    literature.on_complete = note_exporter.save
     scan_status = {"running": False, "error": None, "completed": None}
 
     async def scan():
@@ -68,10 +76,15 @@ def create_app(config, scan_on_start=True):
 
     @asynccontextmanager
     async def lifespan(app):
-        task = asyncio.create_task(loop()) if scan_on_start else None
+        tasks = []
+        if scan_on_start:
+            tasks.append(asyncio.create_task(loop()))
+        if start_worker:
+            tasks.append(asyncio.create_task(run_worker(literature)))
         yield
-        if task:
+        for task in tasks:
             task.cancel()
+        for task in tasks:
             try:
                 await task
             except asyncio.CancelledError:
@@ -79,6 +92,7 @@ def create_app(config, scan_on_start=True):
 
     app = FastAPI(title="沈轻媞", lifespan=lifespan)
     app.state.library = library
+    app.state.literature = literature
     sessions = set()
 
     def auth(request: Request):
@@ -277,6 +291,8 @@ def create_app(config, scan_on_start=True):
             media_type="application/json",
             headers={"Content-Disposition": 'attachment; filename="annotations.json"'},
         )
+
+    app.include_router(create_router(literature, note_exporter, auth))
 
     static = Path(__file__).parent / "static"
     app.mount("/", StaticFiles(directory=static, html=True), name="web")

@@ -4,5 +4,17 @@
   "host": "127.0.0.1",
   "port": 8765,
   "token": "REPLACE_WITH_A_RANDOM_SECRET_OF_AT_LEAST_24_CHARACTERS",
-  "scan_seconds": 60
+  "scan_seconds": 60,
+  "literature": {
+    "records_root": "D:/PersonalRecords",
+    "max_requests": 80,
+    "model": {
+      "provider": "openai",
+      "model": "",
+      "api_mode": "responses",
+      "base_url": "https://api.openai.com/v1",
+      "json_mode": true,
+      "max_output_tokens": 6000
+    }
+  }
 }

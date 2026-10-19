@@ -27,8 +27,13 @@ if (-not (Test-Path "config/local.json")) {
         port = 8765
         token = [Convert]::ToBase64String($Bytes)
         scan_seconds = 60
+        literature = @{
+            records_root = (Join-Path $Library "Notes")
+            max_requests = 80
+            model = @{ provider = "openai"; model = ""; api_mode = "responses"; base_url = "https://api.openai.com/v1"; json_mode = $true; max_output_tokens = 6000 }
+        }
     }
-    $Json = $Config | ConvertTo-Json
+    $Json = $Config | ConvertTo-Json -Depth 5
     [IO.File]::WriteAllText((Join-Path $Project "config/local.json"), $Json, (New-Object Text.UTF8Encoding($false)))
 }
 Write-Host "安装完成。访问密钥保存在 config/local.json，请勿分享或提交 Git。"
