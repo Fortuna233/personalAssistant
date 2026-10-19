@@ -100,7 +100,7 @@ def main():
             }
         )
         request(base, key, "config/folders", folder, "POST")
-        rules = [".DS_Store", "Thumbs.db", ".git", ".obsidian", ".trash"]
+        rules = [".DS_Store", "Thumbs.db", ".git", ".obsidian", ".trash", ".study-trash"]
         request(base, key, "db/ignores?folder=" + folder_id, {"ignore": rules}, "POST")
         print("创建同步集合：", folder_id, path)
     options = config["options"]

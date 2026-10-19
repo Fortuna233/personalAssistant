@@ -4,6 +4,7 @@ import re
 import sqlite3
 import threading
 import zipfile
+import uuid
 from contextlib import contextmanager
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -50,7 +51,7 @@ class Library:
         self.root.mkdir(parents=True, exist_ok=True)
         Path(database).parent.mkdir(parents=True, exist_ok=True)
         self.database = str(database)
-        self.scan_lock = threading.Lock()
+        self.scan_lock = threading.RLock()
         with self.connect() as db:
             db.executescript("""
                 PRAGMA journal_mode=WAL;
@@ -105,7 +106,7 @@ class Library:
                     old = db.execute("SELECT * FROM documents WHERE path=?", (relative,)).fetchone()
                     if old and old["revision"] == revision:
                         continue
-                    doc_id = hashlib.sha256(relative.encode()).hexdigest()[:24]
+                    doc_id = old["id"] if old else uuid.uuid4().hex
                     if old is None:
                         matches = db.execute(
                             "SELECT id,path FROM documents WHERE revision=?", (revision,)

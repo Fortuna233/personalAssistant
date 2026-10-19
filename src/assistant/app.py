@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .library import Library
+from .files import FileManager, FileConflict
 
 
 class Login(BaseModel):
@@ -29,11 +30,20 @@ class Annotation(BaseModel):
     note: str = Field(min_length=1, max_length=20000)
 
 
+class FileOperation(BaseModel):
+    action: str
+    path: str = Field(default="", max_length=2000)
+    target: str = Field(default="", max_length=2000)
+    expected_version: str = Field(default="", max_length=100)
+    content: str = Field(default="", max_length=1000000)
+
+
 def create_app(config, scan_on_start=True):
     token = config["token"]
     if len(token) < 24 or token.startswith("REPLACE_"):
         raise ValueError("请先生成至少 24 字符的访问密钥")
     library = Library(config["library"], config["database"])
+    files = FileManager(library)
     scan_status = {"running": False, "error": None, "completed": None}
 
     async def scan():
@@ -129,6 +139,48 @@ def create_app(config, scan_on_start=True):
     @app.get("/api/documents", dependencies=[Depends(auth)])
     def documents():
         return library.documents()
+
+    def file_error(exc):
+        status = (
+            409
+            if isinstance(exc, FileConflict)
+            else 404
+            if isinstance(exc, FileNotFoundError)
+            else 400
+        )
+        raise HTTPException(status, str(exc))
+
+    @app.get("/api/files", dependencies=[Depends(auth)])
+    def entries():
+        return files.entries()
+
+    @app.post("/api/files/operations", dependencies=[Depends(auth)])
+    def operate(body: FileOperation):
+        try:
+            return files.operate(**body.model_dump())
+        except (ValueError, OSError) as exc:
+            file_error(exc)
+
+    @app.get("/api/files/trash", dependencies=[Depends(auth)])
+    def trash():
+        return files.trash_entries()
+
+    @app.post("/api/files/trash/{trash_id}/restore", dependencies=[Depends(auth)])
+    def restore(trash_id: str):
+        try:
+            return files.restore(trash_id)
+        except (ValueError, OSError) as exc:
+            file_error(exc)
+
+    @app.get("/api/files/download", dependencies=[Depends(auth)])
+    def download(path: str):
+        try:
+            source = files.path(path)
+            if not source.is_file():
+                raise FileNotFoundError("文件不存在")
+            return FileResponse(source, filename=source.name, content_disposition_type="attachment")
+        except (ValueError, OSError) as exc:
+            file_error(exc)
 
     @app.get("/api/status", dependencies=[Depends(auth)])
     def status():

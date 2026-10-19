@@ -39,3 +39,10 @@ node --check src/assistant/static/app.js
 - 本地 pre-commit 启用：敏感文件检查、Ruff、格式、测试；main 禁止直接提交。
 - CI 配置已创建，但未连接远程，不能声称 GitHub CI 已执行。
 - Actions 使用已核实的官方完整提交 SHA：checkout v7.0.1、setup-python v7.0.0。
+
+## 文件浏览器改动验证
+
+- 共 32 项 pytest 回归通过，新增文件元数据、路径限制、符号链接、创建、移动、目录复制、独立身份、保留进度、删除恢复、恢复检索、同名冲突、过期版本和同步根目录保护测试。
+- Ruff 静态/格式检查和前端 JavaScript 语法检查通过。
+- 本地浏览器已观察到文件树、列表日期、排序与新建文件成功后的即时更新。完整移动/复制/恢复流程通过 API 与服务层回归验证；尚未声称三端真实同步测试通过。
+- 文件操作仅在合成演示目录和临时测试目录执行，未接入 `/Users/renhan/Documents/Notes`。
