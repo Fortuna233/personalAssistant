@@ -28,6 +28,14 @@ Android 本地 Obsidian ─┘             │
 
 先不引入 PostgreSQL、Temporal、Redis 或 Kubernetes。当前是单用户单主机索引与阅读，SQLite 的事务、WAL、数据库备份能满足已实现用例；邮箱长任务和复杂审批实现时再引入工作流运行时。此前建议的 PostgreSQL + Temporal 为完整助手的演进方向，不是本阶段必需安装项。
 
+## 个人记录版本管理
+
+笔记、实验记录、protocol 与小型关联附件使用独立 Git 仓库，与本项目代码仓库分开。Mac 当前记录仓库位于 `/Users/renhan/Documents/Notes`，已建立初始本地版本；未设置远程。
+
+目标部署中由 Windows 常开主机统一生成历史快照，Syncthing 只传播资料文件并忽略 `.git`。运行数据库、书籍与大型原始数据各自保存和备份，不与代码或记录历史混装。
+
+未来通过 RecordsVersionStore 适配器提供限定路径的 checkpoint、history、diff 和受控恢复。资料引用可携带个人仓库 ID、提交 SHA、路径与原文位置；能力源码只保存引用，不复制私人内容。当前自动提交、历史 UI 和版本引用集成尚未实现。详见 [个人记录 Git 边界与迁移](PERSONAL_RECORDS.md)。
+
 ## 能力固化与自动加载（目标架构，尚未实现）
 
 新增 capabilities 模块，负责将成功任务与用户纠正形成版本化能力包，并在新任务中匹配、加载。能力复用与某个聊天窗口解耦。

@@ -68,3 +68,7 @@ Syncthing 是同步，不是完整备份；主机本地修改不会由其本机�
 ## 能力成长的目标架构
 
 成功流程和用户纠正将通过“候选 → 验证 → 启用 → 自动匹配 → 固定版本执行 → 反馈”复用。能力包由 Git 管理，运行状态由服务器持久化；能力启用不等于外部操作审批。[完整设计](docs/CAPABILITIES.md)及 [ADR](docs/adr/0001-capability-lifecycle.md)已纳入架构，运行机制尚未实现。
+
+## 个人记录版本管理
+
+笔记、实验记录和 protocol 由独立的个人 Git 仓库管理，不进入助手代码仓库。Mac 初始仓库已建立，Windows 统一提交的目标设计与迁移步骤见 [个人记录 Git](docs/PERSONAL_RECORDS.md)。Syncthing 不同步 `.git`；自动 checkpoint 和历史页面尚未实现。
