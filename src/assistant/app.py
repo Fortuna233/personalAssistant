@@ -77,7 +77,7 @@ def create_app(config, scan_on_start=True):
             except asyncio.CancelledError:
                 pass
 
-    app = FastAPI(title="Study Harbor", lifespan=lifespan)
+    app = FastAPI(title="沈轻媞", lifespan=lifespan)
     app.state.library = library
     sessions = set()
 

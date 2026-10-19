@@ -1,4 +1,4 @@
-# 学习港 · Study Harbor
+# 沈轻媞
 
 Windows 10 常开主机上的个人学习资料中心。Windows、Mac、Android 使用本地 Obsidian，通过 Syncthing 在校园网双向同步；主机提供统一网页，用于检索、阅读、保存阅读进度和批注。后续 Linux 可加入相同同步集合。
 

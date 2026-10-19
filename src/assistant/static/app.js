@@ -26,7 +26,8 @@ async function refresh() {
   if ($('query').value.trim()) searchResults = await api('search?q='+encodeURIComponent($('query').value));
   renderTree(); render();
   const state = await api('status');
-  $('status').textContent=state.index.running?'正在更新索引…':state.index.error || (state.index.completed?'索引更新：'+new Date(state.index.completed).toLocaleString():'等待首次索引');
+  $('status').textContent=state.index.running?'更新中…':state.index.error || '';
+  $('scan').title=state.index.completed?'上次更新：'+new Date(state.index.completed).toLocaleString():'更新资料索引';
 }
 function choose(entry) {
   selectedPath = entry.path;
@@ -77,10 +78,10 @@ function render() {
     if(!result)result=a.path.localeCompare(b.path,'zh-CN',{numeric:true});
     return sortDirection==='asc'?result:-result;
   });
-  $('count').textContent=rows.length+' 个项目';
+  $('count').textContent=rows.length+' 项';
   $('sort-by').value=sortBy; $('sort-direction').textContent=sortDirection==='asc'?'升序 ↑':'降序 ↓';
   document.querySelectorAll('[data-sort]').forEach(button=>{const active=button.dataset.sort===sortBy;button.textContent=({name:'名称',kind:'类型',size:'大小',created_at:'创建日期',modified_at:'最近修改'})[button.dataset.sort]+(active?(sortDirection==='asc'?' ↑':' ↓'):'');button.parentElement.setAttribute('aria-sort',active?(sortDirection==='asc'?'ascending':'descending'):'none');});
-  if(!rows.length){const tr=document.createElement('tr');const td=element('td','此处暂无文件。可以新建文件或切换目录。','empty-state');td.colSpan=6;tr.append(td);list.append(tr);}
+  if(!rows.length){const tr=document.createElement('tr');const td=element('td','暂无文件','empty-state');td.colSpan=6;tr.append(td);list.append(tr);}
   rows.forEach(entry=>{
     const tr=document.createElement('tr');tr.classList.toggle('selected',selectedPath===entry.path);
     const selection=document.createElement('td');const radio=document.createElement('input');radio.type='radio';radio.name='selected-file';radio.checked=selectedPath===entry.path;radio.setAttribute('aria-label','选择 '+entry.name);radio.onchange=()=>{selectedPath=entry.path;renderTree();render();};selection.append(radio);
@@ -93,7 +94,7 @@ function render() {
     tr.onclick=event=>{if(!event.target.closest('button,input,a')){selectedPath=entry.path;renderTree();render();}};list.append(tr);
   });
   const selected=entries.find(e=>e.path===selectedPath);
-  $('selection-info').textContent=selected?'已选择：'+selected.name:'选择文件以进行操作';
+  $('selection-info').textContent=selected?selected.name:'';
   ['rename','move','copy','delete'].forEach(id=>$(id).disabled=!selected||busy);
   document.querySelectorAll('[data-tree-action]').forEach(button=>button.disabled=['rename','move','copy','delete'].includes(button.dataset.treeAction)&&(!selected||busy));
   const crumbs=$('breadcrumbs');crumbs.replaceChildren();const all=element('button','全部资料','quiet');all.onclick=()=>navigate(null);crumbs.append(all);
@@ -108,7 +109,7 @@ function openOperation(action) {
   if(['move','copy','rename','delete'].includes(action)&&!actionEntry)return;
   const titles={create_file:'新建文件',create_folder:'新建文件夹',rename:'重命名',move:'移动',copy:'复制',delete:'移入回收区'};
   $('dialog-title').textContent=titles[action];$('dialog-error').textContent='';
-  $('dialog-description').textContent=action==='delete'?'将“'+actionEntry.path+'”移入主机回收区。其他设备会同步删除；可在此恢复。':action==='rename'||action==='move'?'现有阅读进度与批注会保留。笔记中的链接不会自动改写。':action==='create_file'?'支持 .md、.txt、.csv；例如“课程笔记.md”。':'在资料库中整理文件与文件夹。';
+  $('dialog-description').textContent=action==='delete'?'将“'+actionEntry.path+'”移入主机回收区。其他设备会同步删除；可在此恢复。':action==='rename'||action==='move'?'现有阅读进度与批注会保留。笔记中的链接不会自动改写。':action==='create_file'?'支持 .md、.txt、.csv；例如“课程笔记.md”。':'';
   const deleting=action==='delete';$('name-field').hidden=deleting;$('entry-name').required=!deleting;
   $('destination-field').hidden=deleting||action==='rename';$('text-field').hidden=action!=='create_file';
   const destination=$('destination');destination.replaceChildren();
@@ -127,7 +128,7 @@ $('file-form').onsubmit=async event=>{
     const target=dialogAction==='rename'?joinPath(actionEntry.parent,name):joinPath($('destination').value,name);
     const result=await api('files/operations',{method:'POST',body:JSON.stringify({action:dialogAction==='rename'?'move':dialogAction,path:actionEntry?.path||'',expected_version:actionEntry?.version||'',target:dialogAction==='delete'?'':target,content:$('entry-content').value})});
     $('file-dialog').close();selectedPath=result.path||null;if(result.path){directory=parentOf(result.path);if(directory)expanded.add(directory);}
-    await refresh();fileMessage(dialogAction==='delete'?'已移入回收区，可随时恢复。':'操作完成，索引已更新。');
+    await refresh();fileMessage(dialogAction==='delete'?'已移入回收区，可随时恢复。':'已完成');
   }catch(error){$('dialog-error').textContent=error.message;}finally{busy=false;$('dialog-submit').disabled=false;render();}
 };
 $('dialog-cancel').onclick=()=>{if(!busy)$('file-dialog').close();};
@@ -151,7 +152,7 @@ $('back').onclick=()=>{$('reader').hidden=true;document.querySelector('.library'
 async function openDocument(doc) {
   current=doc; chapters=[]; $('reader-message').textContent='';
   document.querySelector('.library').hidden=true; $('reader').hidden=false;
-  $('reader-title').textContent=doc.path; $('revision').textContent='原文版本 '+doc.revision.slice(0,12);
+  $('reader-title').textContent=doc.path; $('reader-title').title='原文版本 '+doc.revision.slice(0,12);
   $('download').href='/api/documents/'+doc.id+'/file'; $('download').target='_blank';$('download').rel='noopener';
   const state=await api('documents/'+doc.id+'/reading');progress=state.progress;
   if(progress.revision!==doc.revision)showMessage('原文已变化，旧进度和批注仍保留；请核对位置。');

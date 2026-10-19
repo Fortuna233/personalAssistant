@@ -6,7 +6,7 @@ import uvicorn
 
 from .app import create_app
 
-parser = argparse.ArgumentParser(description="Study Harbor")
+parser = argparse.ArgumentParser(description="沈轻媞")
 parser.add_argument("--config", default="config/local.json")
 args = parser.parse_args()
 config_path = Path(args.config).resolve()
